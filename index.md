@@ -1,37 +1,238 @@
-## TESTE
+---
+title: Análise Estatística das Notas do ENEM 2019 no estado de Alagoas
+author: Isadora Rodrigues
+site: "bookdown::bookdown_site"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+---
 
-You can use the [editor on GitHub](https://github.com/isarodriguesss/Analise-Estatistica-ENEM/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+# **Importando as bibliotecas utilizadas**
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```{r message=FALSE}
+library(readxl)
+library(ggplot2)
+library(dbplyr)
+library(tidyverse)
+library(rstatix)
+library(Hmisc)
+library(ggpubr)
+library(corrplot)
+library(ggprism)
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+# **Importando os dados do ENEM**
 
-### Jekyll Themes
+```{r}
+df = read_xlsx('enem_ab2.xlsx')
+```
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/isarodriguesss/Analise-Estatistica-ENEM/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+# Distribuição das notas
 
-### Support or Contact
+```{r}
+hist(df$NOTA_ENEN, col = "lightblue", main = "", xlab = "Frequência", 
+     ylab = "Notas", breaks = 30)
+abline(v=mean(df$NOTA_ENEN), col='red',lwd=2)
+legend(x='topright',legend=paste('Média = ',signif(mean(df$NOTA_ENEN))), fill='red')
+```
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+O gráfico acima mostra grande frequência de notas entre 400 e 500,  com uma média de 509,144.
+
+# Distribuição das notas por sexo
+
+```{r}
+notas_cut = cut(df$NOTA_ENEN, breaks = quantile(df$NOTA_ENEN),
+                include.lowest = TRUE)
+
+quartis_nota_sexo = table(df$TP_SEXO, notas_cut)
+
+barplot(quartis_nota_sexo, beside = TRUE, xlab = "Notas por quartis", 
+        ylab = "Frequência", col = c("lightblue", 5))
+
+legend(x = "topright", legend = c("Feminino", "Masculino"),
+       fill = c("lightblue", 5), bty = "n")
+```
+
+Na distribuição das notas por quartis nos candidatos de sexo feminino e masculinho, podemos ver que o sexo masculino apresenta as menores notas. 
+
+Outra observação é que há uma relação adversa nos dois sexos, enquanto o sexo feminino, quanto maior a nota menor a frequência cai, no sexo masculino quanto maior o quartil de nota, maior a frequência
+
+# Testes de diferença estatística entre as notas de homens e mulheres para a nota de Redação
+
+*H0*: não há diferença estatística
+
+*H1*: há diferença estatística.
+
+## Separando as variáveis
+
+```{r}
+nota_mulher = subset(df$NOTA_ENEN,df$TP_SEXO=='Feminino')
+nota_homem = subset(df$NOTA_ENEN,df$TP_SEXO=='Masculino')
+```
+
+## Teste de variação
+
+```{r}
+var.test(nota_homem,nota_mulher)
+```
+
+Como p-value é maior que 0.05, então a hipótese H0 não é rejeitada, ou seja, há evidências a 5% de significância que as variâncias são iguais. Dessa forma elas podem ser combinadas para se calcular uma estimativa do desvio padrão.
+
+## Teste t
+
+```{r}
+t_test=t.test(nota_homem,nota_mulher, conf.level = 0.05)
+t_test
+```
+
+Como p-value é maior que 0.05, então a hipótese H0 não é rejeitada, ou seja, há evidências a 5% de significância que as médias não são diferentes.
+
+**Dessa forma não há diferença estatísitca entre as notas de redação entre homens e mulheres**
+
+## Gráfico ilustrando a análise de variância das notas entre os sexos
+
+```{r}
+df_p_val <- data.frame(
+  group1 = "Feminino",
+  group2 = "Masculino",
+  label = signif(t_test$p.value, digits=3),
+  y.position = 1000
+)
+
+ggboxplot(df, x = "TP_SEXO", y = "NU_NOTA_REDACAO",
+          xlab = 'Sexo') +
+  add_pvalue(df_p_val)
+```
+
+
+# Classificação das notas em Mesorregiões
+
+```{r}
+meso = read_xlsx('mun_messoregiao.xlsx')
+media_mun=aggregate(NOTA_ENEN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
+media_mun_meso=merge(media_mun,meso,by.x='NO_MUNICIPIO_RESIDENCIA',by.y='mun')
+```
+
+```{r echo=FALSE}
+knitr::kable(media_mun_meso[1:10,], col.names = c('Municípios','Nota','Mesorregião'))
+```
+
+## Distribuição das notas por mesorregião
+
+```{r}
+nota_cut_m = cut(media_mun_meso$NOTA_ENEN, breaks = quantile(media_mun_meso$NOTA_ENEN),
+                 include.lowest = TRUE)
+
+quartis_nota = table(media_mun_meso$mesoregiao, nota_cut_m)
+
+barplot(quartis_nota, beside = TRUE, col = c("lightblue", 5, 'blue'), 
+        ylab = "Frequência", xlab = "Notas por quartis")
+
+legend(x = "topleft", 
+       legend = c("Agreste", "Sertão", "Leste"), 
+       fill = c("lightblue", 5, 'blue'), xpd = TRUE)
+```
+Na distribuição das notas por mesorregião, podemos observar que estrato do sertão apresenta maior nota em todos os quartis e que a região leste tem maior frequência em notas baixas.
+
+# Testes de diferença estatística entre as notas das mesorregiões
+
+## Análise de variância entre as médias das mesorregiões
+
+**Para essa análise, inicialmente foi utiilzado o teste da ANOVA**
+
+*H0*: as médias dos grupos são as mesmas
+
+*H1*: pelo menos uma média dos grupos é diferente das demais
+
+```{r warning=FALSE, results='hide', message=FALSE}
+res.aov=media_mun_meso%>%
+  anova_test(NOTA_ENEN ~ mesoregiao)
+```
+
+```{r echo=FALSE}
+knitr::kable(res.aov)
+```
+
+Como p \> 0,05, a hipóstese nula não é rejeitada, ou seja, não existem diferenças significativas entre os grupos (p = 0,264).
+
+**Para analisar as mesorregiões em pares, foi utilizado o pairwise t test**
+
+*H0*: as médias da dupla são as mesmas
+
+*H1*: as médias da dupla são diferentes
+
+```{r}
+pwc <- media_mun_meso %>%
+  pairwise_t_test(NOTA_ENEN ~ mesoregiao, p.adjust.method = "bonferroni")
+```
+
+```{r echo=FALSE}
+knitr::kable(pwc)
+```
+
+Pode-se observar que todos os p.adj foram maiores que 0.05, ou seja, **não há diferença estatística entre as médias das mesorregiões.**
+
+## Gráfico ilustrando a análise de variância
+
+```{r}
+pwc <- pwc %>% add_xy_position(x = "mesoregiao")
+ggboxplot(media_mun_meso, x = "mesoregiao", y = "NOTA_ENEN",
+          xlab = 'Mesorregião') +
+  stat_pvalue_manual(pwc, label = "p.adj", tip.length = 0, step.increase = 0.1,) +
+  labs(
+    subtitle = get_test_label(res.aov, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+    )
+```
+
+# Matriz de correlação entre as notas das 5 disciplinas do ENEM
+
+```{r}
+nota_cn = aggregate(NU_NOTA_CN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
+notas = merge(nota_cn,aggregate(NU_NOTA_CH~NO_MUNICIPIO_RESIDENCIA,data=df,
+                                FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
+notas = merge(notas,aggregate(NU_NOTA_LC~NO_MUNICIPIO_RESIDENCIA,data=df,
+                              FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
+notas = merge(notas,aggregate(NU_NOTA_MT~NO_MUNICIPIO_RESIDENCIA,data=df,
+                              FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
+notas = merge(notas,aggregate(NU_NOTA_REDACAO~NO_MUNICIPIO_RESIDENCIA,data=df,
+                              FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
+
+
+rownames(notas) = notas$NO_MUNICIPIO_RESIDENCIA
+notas$NO_MUNICIPIO_RESIDENCIA = NULL
+
+corrplot(cor(notas), method = 'number')
+```
+
+Analisando da matriz de correlação, é possível observar que as disciplinas que apresentaram coeficiente de pearson são as Ciências da Natureza e Matemática.
+
+A partir disso, nós podemos realizar uma regressão linear para identificar a equação de previsão
+
+## Equação de regressão
+
+```{r}
+cn_mt=select(notas,NU_NOTA_CN,NU_NOTA_MT)
+plot(cn_mt,main='Notas Ciências da Natureza e Matematica')
+
+regressao = lm(cn_mt$NU_NOTA_MT~cn_mt$NU_NOTA_CN)
+
+abline(regressao, col='red')
+grid()
+summary(regressao)
+```
+
+Equação definida como: 1,36\*x-126,21
+
+## Teste de hipótese para validar a correlação
+
+*H0*: há normalidade nos dados
+
+*H1*: não há normalidade nos dados.
+
+```{r}
+shapiro.test(regressao$residuals)
+```
+
+A hipótese nula não foi rejeitada e há evidências que os resíduos tenham **distribuição normal.**

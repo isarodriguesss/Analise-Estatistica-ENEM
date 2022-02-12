@@ -32,10 +32,6 @@ library(ggprism)
 df = read_xlsx('enem_ab2.xlsx')
 ```
 
-```{r}
-cat('Média = ',mean(df$NOTA_ENEN))
-```
-
 # Distribuição das notas
 
 ```{r}

@@ -8,6 +8,10 @@ output:
     highlight: github
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 # **Importando as bibliotecas utilizadas**
 
 ```{r message=FALSE}
@@ -26,6 +30,10 @@ library(ggprism)
 
 ```{r}
 df = read_xlsx('enem_ab2.xlsx')
+```
+
+```{r}
+cat('Média = ',mean(df$NOTA_ENEN))
 ```
 
 # Distribuição das notas

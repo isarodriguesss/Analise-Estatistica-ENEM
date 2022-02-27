@@ -1,5 +1,5 @@
 ---
-title: Análise Estatística das Notas do ENEM 2019 no estado de Alagoas
+title: Statistical Analysis of ENEM 2019 Grades in the state of Alagoas
 author: Isadora Rodrigues
 site: "bookdown::bookdown_site"
 output:
@@ -12,7 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# **Importando as bibliotecas utilizadas**
+# **Importing the libraries**
 
 ```{r message=FALSE}
 library(readxl)
@@ -26,163 +26,168 @@ library(corrplot)
 library(ggprism)
 ```
 
-# **Importando os dados do ENEM**
+# **Importing the data**
 
 ```{r}
-df = read_xlsx('enem_ab2.xlsx')
+df = read_xlsx('data/enem.xlsx')
 ```
 
-# Distribuição das notas
+```{r}
+cat('Mean = ',mean(df$NOTA_ENEN))
+```
+
+# Grades distribution
 
 ```{r}
-hist(df$NOTA_ENEN, col = "lightblue", main = "", xlab = "Frequência", 
-     ylab = "Notas", breaks = 30)
+hist(df$NOTA_ENEN, col = "lightblue", main = "", xlab = "Frequency", 
+     ylab = "Grades", breaks = 30)
 abline(v=mean(df$NOTA_ENEN), col='red',lwd=2)
-legend(x='topright',legend=paste('Média = ',signif(mean(df$NOTA_ENEN))), fill='red')
+legend(x='topright',legend=paste('Mean = ',signif(mean(df$NOTA_ENEN))), fill='red')
 ```
 
-O gráfico acima mostra grande frequência de notas entre 400 e 500,  com uma média de 509,144.
+The graph above shows a high frequency of grades between 400 and 500, with an average of 509,144.
 
-# Distribuição das notas por sexo
+# Grades distribution by gender
 
 ```{r}
-notas_cut = cut(df$NOTA_ENEN, breaks = quantile(df$NOTA_ENEN),
+grades_cut = cut(df$NOTA_ENEN, breaks = quantile(df$NOTA_ENEN),
                 include.lowest = TRUE)
 
-quartis_nota_sexo = table(df$TP_SEXO, notas_cut)
+quartiles_grade_gender = table(df$TP_SEXO, grades_cut)
 
-barplot(quartis_nota_sexo, beside = TRUE, xlab = "Notas por quartis", 
-        ylab = "Frequência", col = c("lightblue", 5))
+barplot(quartiles_grade_gender, beside = TRUE, xlab = "Grade by quartiles", 
+        ylab = "Frequency", col = c("lightblue", 5))
 
-legend(x = "topright", legend = c("Feminino", "Masculino"),
+legend(x = "topright", legend = c("Female", "Male"),
        fill = c("lightblue", 5), bty = "n")
 ```
 
-Na distribuição das notas por quartis nos candidatos de sexo feminino e masculinho, podemos ver que o sexo masculino apresenta as menores notas. 
+In the distribution of scores by quartiles in female and male candidates, we can see that males have the lowest scores.
 
-Outra observação é que há uma relação adversa nos dois sexos, enquanto o sexo feminino, quanto maior a nota menor a frequência cai, no sexo masculino quanto maior o quartil de nota, maior a frequência
+Another observation is that there is an adverse relationship in both sexes, while in females, the higher the grade, the lower the frequency falls, in males, the higher the grade quartile, the higher the frequency.
 
-# Testes de diferença estatística entre as notas de homens e mulheres para a nota de Redação
+# Statistical difference tests between men's and women's grades for the Writing grade
 
-*H0*: não há diferença estatística
+*H0*: there is no statistical difference;
 
-*H1*: há diferença estatística.
+*H1*: there is statistical difference.
 
-## Separando as variáveis
+## Separating variables
 
 ```{r}
-nota_mulher = subset(df$NOTA_ENEN,df$TP_SEXO=='Feminino')
-nota_homem = subset(df$NOTA_ENEN,df$TP_SEXO=='Masculino')
+women_grades = subset(df$NOTA_ENEN,df$TP_SEXO=='Feminino')
+men_grades = subset(df$NOTA_ENEN,df$TP_SEXO=='Masculino')
 ```
 
-## Teste de variação
+## Variation test
 
 ```{r}
-var.test(nota_homem,nota_mulher)
+var.test(men_grades,women_grades)
 ```
 
-Como p-value é maior que 0.05, então a hipótese H0 não é rejeitada, ou seja, há evidências a 5% de significância que as variâncias são iguais. Dessa forma elas podem ser combinadas para se calcular uma estimativa do desvio padrão.
+As p-value is greater than 0.05, then hypothesis H0 is not rejected, that is, there is evidence at 5% of significance that the variances are equal. In this way they can be combined to calculate an estimate of the standard deviation.
 
-## Teste t
+## T test
 
 ```{r}
-t_test=t.test(nota_homem,nota_mulher, conf.level = 0.05)
+t_test=t.test(men_grades,women_grades, conf.level = 0.05)
 t_test
 ```
 
-Como p-value é maior que 0.05, então a hipótese H0 não é rejeitada, ou seja, há evidências a 5% de significância que as médias não são diferentes.
+As p-value is greater than 0.05, then hypothesis H0 is not rejected, that is, there is evidence at 5% of significance that the means are not different.
 
-**Dessa forma não há diferença estatísitca entre as notas de redação entre homens e mulheres**
+**Thus, there is no statistical difference between the essay grades between men and women.**
 
-## Gráfico ilustrando a análise de variância das notas entre os sexos
+## Graph illustrating the analysis of variance of grades between genders
 
 ```{r}
 df_p_val <- data.frame(
-  group1 = "Feminino",
-  group2 = "Masculino",
+  group1 = "Female",
+  group2 = "Male",
   label = signif(t_test$p.value, digits=3),
   y.position = 1000
 )
 
 ggboxplot(df, x = "TP_SEXO", y = "NU_NOTA_REDACAO",
-          xlab = 'Sexo') +
+          xlab = 'Gender', ylab = 'Writing Grades') +
   add_pvalue(df_p_val)
 ```
 
 
-# Classificação das notas em Mesorregiões
+# Classification of notes in Mesoregions
 
 ```{r}
-meso = read_xlsx('mun_messoregiao.xlsx')
-media_mun=aggregate(NOTA_ENEN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
-media_mun_meso=merge(media_mun,meso,by.x='NO_MUNICIPIO_RESIDENCIA',by.y='mun')
+meso = read_xlsx('data/mun_messoregiao.xlsx')
+mean_mun=aggregate(NOTA_ENEN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
+mean_mun_meso=merge(mean_mun,meso,by.x='NO_MUNICIPIO_RESIDENCIA',by.y='mun')
 ```
 
 ```{r echo=FALSE}
-knitr::kable(media_mun_meso[1:10,], col.names = c('Municípios','Nota','Mesorregião'))
+knitr::kable(mean_mun_meso[1:10,], col.names = c('Counties','Grade','Mesoregions'))
 ```
 
-## Distribuição das notas por mesorregião
+## Distribution of grades by mesoregion
 
 ```{r}
-nota_cut_m = cut(media_mun_meso$NOTA_ENEN, breaks = quantile(media_mun_meso$NOTA_ENEN),
+grade_cut_m = cut(mean_mun_meso$NOTA_ENEN, breaks = quantile(mean_mun_meso$NOTA_ENEN),
                  include.lowest = TRUE)
 
-quartis_nota = table(media_mun_meso$mesoregiao, nota_cut_m)
+quartiles_grade = table(mean_mun_meso$mesorregiao, grade_cut_m)
 
-barplot(quartis_nota, beside = TRUE, col = c("lightblue", 5, 'blue'), 
-        ylab = "Frequência", xlab = "Notas por quartis")
+barplot(quartiles_grade, beside = TRUE, col = c("lightblue", 5, 'blue'), 
+        ylab = "Frequency", xlab = "Grades by quatiles")
 
 legend(x = "topleft", 
-       legend = c("Agreste", "Sertão", "Leste"), 
+       legend = c("Wild", "Sertão", "East"), 
        fill = c("lightblue", 5, 'blue'), xpd = TRUE)
 ```
-Na distribuição das notas por mesorregião, podemos observar que estrato do sertão apresenta maior nota em todos os quartis e que a região leste tem maior frequência em notas baixas.
 
-# Testes de diferença estatística entre as notas das mesorregiões
+In the distribution of scores by mesoregion, we can see that the sertão stratum has the highest score in all quartiles and that the eastern region has a higher frequency of low scores.
 
-## Análise de variância entre as médias das mesorregiões
+# Statistical difference tests between the scores of the mesoregions
 
-**Para essa análise, inicialmente foi utiilzado o teste da ANOVA**
+## Analysis of variance between the means of the mesoregions
 
-*H0*: as médias dos grupos são as mesmas
+**For this analysis, the ANOVA test was initially used**
 
-*H1*: pelo menos uma média dos grupos é diferente das demais
+*H0*: the means of the groups are the same
+
+*H1*: at least one mean of the groups is different from the others
 
 ```{r warning=FALSE, results='hide', message=FALSE}
-res.aov=media_mun_meso%>%
-  anova_test(NOTA_ENEN ~ mesoregiao)
+res.aov=mean_mun_meso%>%
+  anova_test(NOTA_ENEN ~ mesorregiao)
 ```
 
 ```{r echo=FALSE}
 knitr::kable(res.aov)
 ```
 
-Como p \> 0,05, a hipóstese nula não é rejeitada, ou seja, não existem diferenças significativas entre os grupos (p = 0,264).
+As p \> 0.05, the null hypothesis is not rejected, that is, there are no significant differences between the groups (p = 0.264).
 
-**Para analisar as mesorregiões em pares, foi utilizado o pairwise t test**
+**To analyze the mesoregions in pairs, the pairwise t test was used.**
 
-*H0*: as médias da dupla são as mesmas
+*H0*: the averages of the pair are the same
 
-*H1*: as médias da dupla são diferentes
+*H1*: the averages of the pair are different
 
 ```{r}
-pwc <- media_mun_meso %>%
-  pairwise_t_test(NOTA_ENEN ~ mesoregiao, p.adjust.method = "bonferroni")
+pwc <- mean_mun_meso %>%
+  pairwise_t_test(NOTA_ENEN ~ mesorregiao, p.adjust.method = "bonferroni")
 ```
 
 ```{r echo=FALSE}
 knitr::kable(pwc)
 ```
 
-Pode-se observar que todos os p.adj foram maiores que 0.05, ou seja, **não há diferença estatística entre as médias das mesorregiões.**
+It can be seen that all p.adj were greater than 0.05, that is, **there is no statistical difference between the averages of the mesoregions.**
 
-## Gráfico ilustrando a análise de variância
+## Graph illustrating the analysis of variance
 
 ```{r}
-pwc <- pwc %>% add_xy_position(x = "mesoregiao")
-ggboxplot(media_mun_meso, x = "mesoregiao", y = "NOTA_ENEN",
-          xlab = 'Mesorregião') +
+pwc <- pwc %>% add_xy_position(x = "mesorregiao")
+ggboxplot(mean_mun_meso, x = "mesorregiao", y = "NOTA_ENEN",
+          xlab = 'Mesoregion', ylab = 'Grades') +
   stat_pvalue_manual(pwc, label = "p.adj", tip.length = 0, step.increase = 0.1,) +
   labs(
     subtitle = get_test_label(res.aov, detailed = TRUE),
@@ -190,53 +195,53 @@ ggboxplot(media_mun_meso, x = "mesoregiao", y = "NOTA_ENEN",
     )
 ```
 
-# Matriz de correlação entre as notas das 5 disciplinas do ENEM
+# Correlation matrix between the scores of the 5 ENEM subjects
 
 ```{r}
-nota_cn = aggregate(NU_NOTA_CN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
-notas = merge(nota_cn,aggregate(NU_NOTA_CH~NO_MUNICIPIO_RESIDENCIA,data=df,
+grande_cn = aggregate(NU_NOTA_CN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
+grades = merge(grande_cn,aggregate(NU_NOTA_CH~NO_MUNICIPIO_RESIDENCIA,data=df,
                                 FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
-notas = merge(notas,aggregate(NU_NOTA_LC~NO_MUNICIPIO_RESIDENCIA,data=df,
+grades = merge(grades,aggregate(NU_NOTA_LC~NO_MUNICIPIO_RESIDENCIA,data=df,
                               FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
-notas = merge(notas,aggregate(NU_NOTA_MT~NO_MUNICIPIO_RESIDENCIA,data=df,
+grades = merge(grades,aggregate(NU_NOTA_MT~NO_MUNICIPIO_RESIDENCIA,data=df,
                               FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
-notas = merge(notas,aggregate(NU_NOTA_REDACAO~NO_MUNICIPIO_RESIDENCIA,data=df,
-                              FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
+grades = merge(grades,aggregate(NU_NOTA_REDACAO~NO_MUNICIPIO_RESIDENCIA,
+                                data=df,FUN=mean),by='NO_MUNICIPIO_RESIDENCIA')
 
 
-rownames(notas) = notas$NO_MUNICIPIO_RESIDENCIA
-notas$NO_MUNICIPIO_RESIDENCIA = NULL
+rownames(grades) = grades$NO_MUNICIPIO_RESIDENCIA
+grades$NO_MUNICIPIO_RESIDENCIA = NULL
 
-corrplot(cor(notas), method = 'number')
+corrplot(cor(grades), method = 'number')
 ```
 
-Analisando da matriz de correlação, é possível observar que as disciplinas que apresentaram coeficiente de pearson são as Ciências da Natureza e Matemática.
+Analyzing the correlation matrix, it is possible to observe that the subjects that presented Pearson's coefficient are Natural Sciences and Mathematics.
 
-A partir disso, nós podemos realizar uma regressão linear para identificar a equação de previsão
+From this, we can perform a linear regression to identify the prediction equation.
 
-## Equação de regressão
+## Regression equation
 
 ```{r}
-cn_mt=select(notas,NU_NOTA_CN,NU_NOTA_MT)
-plot(cn_mt,main='Notas Ciências da Natureza e Matematica')
+cn_mt=select(grades,NU_NOTA_CN,NU_NOTA_MT)
+plot(cn_mt,main='Notes Natural Sciences and Mathematics')
 
-regressao = lm(cn_mt$NU_NOTA_MT~cn_mt$NU_NOTA_CN)
+regression = lm(cn_mt$NU_NOTA_MT~cn_mt$NU_NOTA_CN)
 
-abline(regressao, col='red')
+abline(regression, col='red')
 grid()
-summary(regressao)
+summary(regression)
 ```
 
-Equação definida como: 1,36\*x-126,21
+Equation defined as: 1,36\*x-126,21
 
-## Teste de hipótese para validar a correlação
+## Hypothesis test to validate the correlation
 
-*H0*: há normalidade nos dados
+*H0*: there is normality in the data
 
-*H1*: não há normalidade nos dados.
+*H1*: there is no normality in the data.
 
 ```{r}
-shapiro.test(regressao$residuals)
+shapiro.test(regression$residuals)
 ```
 
-A hipótese nula não foi rejeitada e há evidências que os resíduos tenham **distribuição normal.**
+The null hypothesis was not rejected and there is evidence that the residuals are **normally distributed.**

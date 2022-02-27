@@ -1,4 +1,4 @@
-# **Importando as bibliotecas utilizadas**
+# **Importing the libraries**
 
 
 library(readxl)
@@ -12,13 +12,13 @@ library(corrplot)
 library(ggprism)
 
 
-# **Importando os dados do ENEM**
+# **Importing the data**
 
 
 df = read_xlsx('enem_ab2.xlsx')
 
 
-# Distribuição das notas
+# Grades distribution
 
 hist(df$NOTA_ENEN, col = "lightblue", main = "", xlab = "Frequência", 
      ylab = "Notas", breaks = 30)
@@ -26,7 +26,7 @@ abline(v=mean(df$NOTA_ENEN), col='red',lwd=2)
 legend(x='topright',legend=paste('Média = ',signif(mean(df$NOTA_ENEN))), fill='red')
 
 
-# Distribuição das notas por sexo
+# Grades distribution by gender
 
 
 notas_cut = cut(df$NOTA_ENEN, breaks = quantile(df$NOTA_ENEN),
@@ -41,30 +41,30 @@ legend(x = "topright", legend = c("Feminino", "Masculino"),
        fill = c("lightblue", 5), bty = "n")
 
 
-# Testes de diferença estatística entre as notas de homens e mulheres para a nota de Redação
+# Statistical difference tests between men's and women's grades for the Writing grade
 
 
-## Separando as variáveis
+## Separating variables
 
 
 nota_mulher = subset(df$NOTA_ENEN,df$TP_SEXO=='Feminino')
 nota_homem = subset(df$NOTA_ENEN,df$TP_SEXO=='Masculino')
 
 
-## Teste de variação
+## Variation test
 
 
 var.test(nota_homem,nota_mulher)
 
 
-## Teste t
+## T test
 
 
 t_test=t.test(nota_homem,nota_mulher, conf.level = 0.05)
 t_test
 
 
-## Gráfico ilustrando a análise de variância das notas entre os sexos
+## Graph illustrating the analysis of variance of grades between genders
 
 df_p_val <- data.frame(
   group1 = "Feminino",
@@ -79,14 +79,14 @@ ggboxplot(df, x = "TP_SEXO", y = "NU_NOTA_REDACAO",
 
 
 
-# Classificação das notas em Mesorregiões
+# Classification of notes in Mesoregions
 
 
 meso = read_xlsx('mun_messoregiao.xlsx')
 media_mun=aggregate(NOTA_ENEN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
 media_mun_meso=merge(media_mun,meso,by.x='NO_MUNICIPIO_RESIDENCIA',by.y='mun')
 
-## Distribuição das notas por mesorregião
+## Distribution of grades by mesoregion
 
 nota_cut_m = cut(media_mun_meso$NOTA_ENEN, breaks = quantile(media_mun_meso$NOTA_ENEN),
                  include.lowest = TRUE)
@@ -101,9 +101,9 @@ legend(x = "topleft",
        fill = c("lightblue", 5, 'blue'), xpd = TRUE)
 
 
-# Testes de diferença estatística entre as notas das mesorregiões
+# Statistical difference tests between the scores of the mesoregions
 
-## Análise de variância entre as médias das mesorregiões
+## Analysis of variance between the means of the mesoregions
 
 
 
@@ -115,7 +115,7 @@ pwc <- media_mun_meso %>%
   pairwise_t_test(NOTA_ENEN ~ mesoregiao, p.adjust.method = "bonferroni")
 
 
-## Gráfico ilustrando a análise de variância
+## Graph illustrating the analysis of variance
 
 
 pwc <- pwc %>% add_xy_position(x = "mesoregiao")
@@ -127,7 +127,7 @@ ggboxplot(media_mun_meso, x = "mesoregiao", y = "NOTA_ENEN",
     caption = get_pwc_label(pwc)
     )
 
-# Matriz de correlação entre as notas das 5 disciplinas do ENEM
+# Correlation matrix between the scores of the 5 ENEM subjects
 
 
 nota_cn = aggregate(NU_NOTA_CN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
@@ -147,7 +147,7 @@ notas$NO_MUNICIPIO_RESIDENCIA = NULL
 corrplot(cor(notas), method = 'number')
 
 
-## Equação de regressão
+## Regression equation
 
 
 cn_mt=select(notas,NU_NOTA_CN,NU_NOTA_MT)
@@ -159,6 +159,6 @@ abline(regressao, col='red')
 grid()
 summary(regressao)
 
-## Teste de hipótese para validar a correlação
+## Hypothesis test to validate the correlation
 
 shapiro.test(regressao$residuals)

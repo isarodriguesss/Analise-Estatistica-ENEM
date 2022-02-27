@@ -2,7 +2,7 @@
 <p align="justify">This is a project to analyze the ENEM data for the year 2019. The following were carried out: descriptive analysis; statistical hypothesis testing to identify differences and correlations between some variables; linear regression.</p>
 
 Go to Git Page for a better view of the results:
-https://isarodriguesss.github.io/Analise-Estatistica-ENEM/
+https://isarodriguesss.github.io/Statisctical-Analysis-ENEM/
 
 ## Technologies used
 - Linguagem R

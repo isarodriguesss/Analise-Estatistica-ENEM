@@ -66,7 +66,7 @@ In the distribution of scores by quartiles in female and male candidates, we can
 
 Another observation is that there is an adverse relationship in both sexes, while in females, the higher the grade, the lower the frequency falls, in males, the higher the grade quartile, the higher the frequency.
 
-# Statistical difference tests between men's and women's grades for the Writing grade
+# Statistical difference between men's and women's grades for the Writing grade
 
 *H0*: there is no statistical difference;
 
@@ -98,7 +98,7 @@ As p-value is greater than 0.05, then hypothesis H0 is not rejected, that is, th
 
 **Thus, there is no statistical difference between the essay grades between men and women.**
 
-## Graph illustrating the analysis of variance of grades between genders
+## Graph illustrating the analysis of grades variance between genders
 
 ```{r}
 df_p_val <- data.frame(
@@ -117,7 +117,7 @@ ggboxplot(df, x = "TP_SEXO", y = "NU_NOTA_REDACAO",
 # Classification of notes in Mesoregions
 
 ```{r}
-meso = read_xlsx('data/mun_messoregiao.xlsx')
+meso = read_xlsx('data/mun_messorregiao.xlsx')
 mean_mun=aggregate(NOTA_ENEN~NO_MUNICIPIO_RESIDENCIA,data=df,FUN=mean)
 mean_mun_meso=merge(mean_mun,meso,by.x='NO_MUNICIPIO_RESIDENCIA',by.y='mun')
 ```
@@ -142,9 +142,9 @@ legend(x = "topleft",
        fill = c("lightblue", 5, 'blue'), xpd = TRUE)
 ```
 
-In the distribution of scores by mesoregion, we can see that the sertão stratum has the highest score in all quartiles and that the eastern region has a higher frequency of low scores.
+In the distribution of scores by mesoregion, we can see that the Sertão stratum has the highest score in all quartiles and that the Eastern region has a higher frequency of low scores.
 
-# Statistical difference tests between the scores of the mesoregions
+# Statistical difference between the scores of the mesoregions
 
 ## Analysis of variance between the means of the mesoregions
 
@@ -182,7 +182,7 @@ knitr::kable(pwc)
 
 It can be seen that all p.adj were greater than 0.05, that is, **there is no statistical difference between the averages of the mesoregions.**
 
-## Graph illustrating the analysis of variance
+## Graph illustrating the variance analysis
 
 ```{r}
 pwc <- pwc %>% add_xy_position(x = "mesorregiao")
@@ -223,7 +223,7 @@ From this, we can perform a linear regression to identify the prediction equatio
 
 ```{r}
 cn_mt=select(grades,NU_NOTA_CN,NU_NOTA_MT)
-plot(cn_mt,main='Notes Natural Sciences and Mathematics')
+plot(cn_mt,main='Grades of Natural Sciences and Mathematics')
 
 regression = lm(cn_mt$NU_NOTA_MT~cn_mt$NU_NOTA_CN)
 
